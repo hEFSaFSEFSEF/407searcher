@@ -11,21 +11,17 @@ app.use(bodyParser.json());
 // Servir les fichiers statiques (index.html, etc.)
 app.use(express.static(path.join(__dirname)));
 
-// Connexion à la base de données
+// Connexion à Supabase via DATABASE_URL
 const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_DATABASE || 'osint_db',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false,
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
 });
 
 pool.connect((err) => {
     if (err) {
-        console.error('[ERREUR] Connexion DB échouée :', err.message);
+        console.error('[ERREUR] Connexion Supabase échouée :', err.message);
     } else {
-        console.log('[✅] Connecté à PostgreSQL');
+        console.log('[✅] Connecté à Supabase PostgreSQL');
     }
 });
 
@@ -37,6 +33,8 @@ app.post('/api/search', async (req, res) => {
             return res.status(400).json({ error: 'Requête vide' });
         }
         const q = query.trim();
+
+        // Utiliser les noms de colonnes renommés (sans accents, en minuscules)
         let sql = '';
         let params = [];
         switch (type) {
@@ -48,12 +46,14 @@ app.post('/api/search', async (req, res) => {
                 sql = `SELECT * FROM etat_civil WHERE mobile_personnel ILIKE $1 OR mobile_travail ILIKE $1 OR tel_domicile ILIKE $1 OR tel_travail ILIKE $1`;
                 params = [`%${q}%`];
                 break;
-            default:
+            default: // username
                 sql = `SELECT * FROM etat_civil WHERE nom_1 ILIKE $1 OR prenom_1 ILIKE $1 OR email_principal ILIKE $1`;
                 params = [`%${q}%`];
         }
+
         const result = await pool.query(sql, params);
         res.json({ results: result.rows });
+
     } catch (error) {
         console.error('[ERREUR SQL]', error.message);
         res.status(500).json({ error: 'Erreur base de données' });
