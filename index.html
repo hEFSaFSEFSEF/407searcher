@@ -1,360 +1,74 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>407searcher · OSINT</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-        body {
-            background: #0a0e17;
-            color: #e8edf5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-image: radial-gradient(ellipse 110% 85% at 50% 100%, rgba(180, 180, 180, 0.05), transparent 70%);
-        }
-        .navbar {
-            background: rgba(10, 14, 23, 0.7);
-            backdrop-filter: blur(16px) saturate(140%);
-            border-bottom: 1px solid #1a2232;
-            padding: 0 1.5rem;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-        .logo {
-            font-family: monospace;
-            font-size: 1.15rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        .logo span:first-child { color: #e8edf5; }
-        .logo span:nth-child(2) { color: #34d399; }
-        .logo span:last-child { color: #e8edf5; }
-        .nav-links { display: flex; gap: 0.25rem; align-items: center; }
-        .nav-links a {
-            color: #8aa0c0;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 500;
-            padding: 0.35rem 0.9rem;
-            border-radius: 9999px;
-            transition: 0.2s;
-        }
-        .nav-links a:hover { color: #ffffff; background: rgba(255,255,255,0.05); }
-        .nav-cta {
-            background: #e8edf5;
-            color: #0a0e17;
-            padding: 0.4rem 1.2rem;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        .nav-cta:hover { background: #ffffff; transform: translateY(-1px); }
-        .live-badge {
-            border: 1px solid #1a2232;
-            background: rgba(255,255,255,0.02);
-            border-radius: 9999px;
-            padding: 0.2rem 0.6rem;
-            font-size: 0.65rem;
-            font-family: monospace;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            color: #8aa0c0;
-        }
-        .live-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: #f59e0b;
-            display: inline-block;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-            flex: 1;
-            width: 100%;
-        }
-        .hero {
-            text-align: center;
-            padding: 3rem 0 2rem;
-        }
-        .hero-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.05);
-            border-radius: 9999px;
-            padding: 0.2rem 1rem;
-            font-size: 0.7rem;
-            font-family: monospace;
-            color: #8aa0c0;
-            border: 1px solid #1a2232;
-            margin-bottom: 1.5rem;
-        }
-        .hero-badge .dot {
-            display: inline-block;
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: #34d399;
-            margin-right: 0.4rem;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        .hero h1 {
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
-            font-weight: 600;
-            line-height: 1.05;
-            letter-spacing: -0.03em;
-            background: linear-gradient(to bottom, #e8edf5 30%, rgba(232,237,245,0.4));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .hero p {
-            color: #b0c4e0;
-            max-width: 550px;
-            margin: 1rem auto;
-            font-size: 1.05rem;
-        }
-        .search-box {
-            max-width: 600px;
-            margin: 1.5rem auto;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid #1a2232;
-            border-radius: 9999px;
-            padding: 0.4rem 0.4rem 0.4rem 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            backdrop-filter: blur(8px);
-            transition: border-color 0.3s, background 0.3s;
-        }
-        .search-box:focus-within { border-color: #34d399; background: rgba(255,255,255,0.07); }
-        .search-box input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0.5rem 0;
-            color: #e8edf5;
-            font-size: 0.9rem;
-            outline: none;
-            min-width: 0;
-        }
-        .search-box input::placeholder { color: #5a7292; }
-        .search-box button {
-            background: transparent;
-            border: none;
-            color: #5a7292;
-            cursor: pointer;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        .search-box button:hover { color: #e8edf5; background: rgba(255,255,255,0.05); }
-        .search-box .btn-search {
-            background: #e8edf5;
-            color: #0a0e17;
-            padding: 0.4rem 1rem;
-            font-weight: 600;
-        }
-        .search-box .btn-search:hover { background: #ffffff; }
+const express = require('express');
+const { Pool } = require('pg');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const path = require('path');
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1.5rem;
-            margin: 2.5rem 0;
-            text-align: center;
-            border-top: 1px solid #1a2232;
-            border-bottom: 1px solid #1a2232;
-            padding: 2rem 0;
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+// Servir les fichiers statiques (index.html)
+app.use(express.static(path.join(__dirname)));
+
+// Connexion à la base via variables d'environnement
+const pool = new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_DATABASE || 'osint_db',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false,
+});
+
+pool.connect((err) => {
+    if (err) {
+        console.error('[ERREUR] Connexion DB échouée :', err.message);
+    } else {
+        console.log('[✅] Connecté à PostgreSQL');
+    }
+});
+
+app.post('/api/search', async (req, res) => {
+    try {
+        const { query, type } = req.body;
+        if (!query || query.trim() === '') {
+            return res.status(400).json({ error: 'Requête vide' });
         }
-        .stats .num { font-size: 2rem; font-weight: 600; color: #e8edf5; font-family: monospace; }
-        .stats .label { font-size: 0.75rem; color: #7a92b2; margin-top: 0.2rem; }
-
-        .results {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid #1a2232;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-top: 2rem;
+        const q = query.trim();
+        let sql = '';
+        let params = [];
+        switch (type) {
+            case 'email':
+                sql = `SELECT * FROM etat_civil WHERE email_principal ILIKE $1 OR email_officiel ILIKE $1`;
+                params = [`%${q}%`];
+                break;
+            case 'phone':
+                sql = `SELECT * FROM etat_civil WHERE mobile_personnel ILIKE $1 OR mobile_travail ILIKE $1 OR tel_domicile ILIKE $1 OR tel_travail ILIKE $1`;
+                params = [`%${q}%`];
+                break;
+            default:
+                sql = `SELECT * FROM etat_civil WHERE nom_1 ILIKE $1 OR prenom_1 ILIKE $1 OR email_principal ILIKE $1`;
+                params = [`%${q}%`];
         }
-        .results table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .results th {
-            text-align: left;
-            padding: 0.7rem 1rem;
-            color: #7a92b2;
-            font-weight: 500;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-bottom: 1px solid #1a2232;
-        }
-        .results td {
-            padding: 0.6rem 1rem;
-            border-bottom: 1px solid #111a28;
-            color: #c0d4ec;
-        }
-        .results tr:hover td { background: rgba(255,255,255,0.03); }
-        .results .empty {
-            text-align: center;
-            padding: 2.5rem;
-            color: #5a7292;
-        }
-        .footer {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: #3a4a5a;
-            font-size: 0.75rem;
-            border-top: 1px solid #1a2232;
-            margin-top: 2rem;
-        }
-        @media (max-width: 640px) {
-            .nav-links a { display: none; }
-            .nav-links .nav-cta { display: inline-block; }
-            .search-box { flex-wrap: wrap; padding: 0.8rem; }
-            .search-box input { width: 100%; }
-            .stats { grid-template-columns: 1fr 1fr; gap: 1rem; }
-        }
-        .badge {
-            padding: 0.15rem 0.6rem;
-            border-radius: 9999px;
-            font-size: 0.65rem;
-            font-weight: 500;
-        }
-        .badge-green { background: #1a3a2a; color: #7fd4b0; }
-        .badge-yellow { background: #3a3a1a; color: #d4c07f; }
-    </style>
-</head>
-<body>
+        const result = await pool.query(sql, params);
+        res.json({ results: result.rows });
+    } catch (error) {
+        console.error('[ERREUR SQL]', error.message);
+        res.status(500).json({ error: 'Erreur base de données' });
+    }
+});
 
-    <!-- NAVBAR -->
-    <header class="navbar">
-        <a class="logo" href="/"><span>leak</span><span>.</span><span>fun</span></a>
-        <nav class="nav-links">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/docs">Documentation</a>
-            <a href="/contact">Contact</a>
-            <span class="live-badge"><span class="live-dot"></span> — online</span>
-            <a href="/login" style="color:#8aa0c0; padding:0.35rem 0.9rem;">Log in</a>
-            <a href="/sign-up" class="nav-cta">Start →</a>
-        </nav>
-    </header>
+app.get('/api/stats', async (req, res) => {
+    try {
+        const total = await pool.query('SELECT COUNT(*) FROM etat_civil');
+        res.json({ total: parseInt(total.rows[0].count) });
+    } catch (error) {
+        res.status(500).json({ error: 'Erreur stats' });
+    }
+});
 
-    <!-- MAIN -->
-    <main class="container">
-        <section class="hero">
-            <div class="hero-badge"><span class="dot"></span> running · 24/7</div>
-            <h1>Public data,<br>private search.</h1>
-            <p>Start with an email, username, phone or platform ID — <strong style="color:#e8edf5;">407searcher routes it to the right search.</strong></p>
-            
-            <form class="search-box" id="searchForm" onsubmit="return false;">
-                <input type="text" id="searchInput" placeholder="try: +33 6 12 34 56 78" aria-label="Recherche">
-                <button type="button" id="searchBtn" class="btn-search">Search →</button>
-            </form>
-        </section>
-
-        <!-- STATS -->
-        <div class="stats" id="statsContainer">
-            <div><div class="num" id="statTotal">12.09M</div><div class="label">records indexed</div></div>
-            <div><div class="num" id="statToday">1,482</div><div class="label">queries today</div></div>
-            <div><div class="num" id="statSources">8+</div><div class="label">platforms cross-referenced</div></div>
-            <div><div class="num" id="statLatency">&lt;100ms</div><div class="label">avg. latency</div></div>
-        </div>
-
-        <!-- RESULTS -->
-        <div class="results">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nom</th><th>Prénom</th><th>Email</th><th>Mobile</th><th>Ville</th><th>Code postal</th><th>Naissance</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsBody">
-                    <tr><td colspan="7" class="empty"><span style="font-size:1.5rem; display:block;">🔍</span> Entrez un terme de recherche.</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
-
-    <footer class="footer">407searcher · 12 091 913 enregistrements · PostgreSQL · © 2026</footer>
-
-    <script>
-        (function() {
-            const searchInput = document.getElementById('searchInput');
-            const searchBtn = document.getElementById('searchBtn');
-            const resultsBody = document.getElementById('resultsBody');
-
-            function escapeHtml(text) {
-                if (!text) return '';
-                return String(text).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[m] || m);
-            }
-
-            function renderResults(data) {
-                if (!data || data.length === 0) {
-                    resultsBody.innerHTML = `<tr><td colspan="7" class="empty">Aucun résultat.</td></tr>`;
-                    return;
-                }
-                let html = '';
-                for (let row of data) {
-                    const ne = row.ne_le ? row.ne_le.slice(0,10) : '';
-                    html += `<tr>
-                        <td>${escapeHtml(row.nom_1 || '')}</td>
-                        <td>${escapeHtml(row.prenom_1 || '')}</td>
-                        <td>${escapeHtml(row.email_principal || '')}</td>
-                        <td>${escapeHtml(row.mobile_personnel || '')}</td>
-                        <td>${escapeHtml(row.bureau_distributeur || '')}</td>
-                        <td>${escapeHtml(row.code_postal || '')}</td>
-                        <td>${escapeHtml(ne)}</td>
-                    </tr>`;
-                }
-                resultsBody.innerHTML = html;
-            }
-
-            function performSearch() {
-                const query = searchInput.value.trim();
-                if (!query) {
-                    resultsBody.innerHTML = `<tr><td colspan="7" class="empty">Veuillez entrer un terme.</td></tr>`;
-                    return;
-                }
-
-                fetch('/api/search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, type: 'username' })
-                })
-                .then(res => res.json())
-                .then(data => renderResults(data.results || []))
-                .catch(() => {
-                    resultsBody.innerHTML = `<tr><td colspan="7" class="empty">⚠️ Erreur : backend introuvable (node backend.js)</td></tr>`;
-                });
-            }
-
-            searchBtn.addEventListener('click', performSearch);
-            searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
-        })();
-    </script>
-
-</body>
-</html>
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`[🚀] Serveur lancé sur le port ${PORT}`);
+});
