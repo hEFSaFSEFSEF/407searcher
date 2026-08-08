@@ -1,7 +1,6 @@
 {
   "name": "407searcher",
   "version": "1.0.0",
-  "description": "OSINT search engine",
   "main": "backend.js",
   "scripts": {
     "start": "node backend.js"
