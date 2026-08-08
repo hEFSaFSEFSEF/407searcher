@@ -4,17 +4,17 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Servir tous les fichiers du dossier courant
+// Servir les fichiers statiques
 app.use(express.static(path.join(__dirname)));
 
-// Route pour la page d'accueil
+// Route principale
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Route de test pour vérifier que le serveur tourne
+// Route de test
 app.get('/api/status', (req, res) => {
-    res.json({ status: 'OK', message: 'Le serveur fonctionne !' });
+    res.json({ status: 'OK' });
 });
 
 app.listen(PORT, () => {
